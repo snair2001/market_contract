@@ -1,0 +1,2 @@
+near create-account auction_market.evin.testnet --masterAccount evin.testnet  --initialBalance 50
+near deploy --wasmFile ./target/wasm32-unknown-unknown/release/nft_simple.wasm --accountId auction_market.evin.testnet

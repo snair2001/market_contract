@@ -1,0 +1,1 @@
+near delete $c evin.testnet
