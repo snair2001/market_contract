@@ -14,7 +14,6 @@ impl Contract {
         token_id: TokenId,
     ) -> Sale {
 
-
         //get the unique sale ID (contract + DELIMITER + token ID)
         let contract_and_token_id = format!("{}{}{}", &nft_contract_id, DELIMETER, token_id);
         //get the sale object by removing the unique sale ID. If there was no sale, panic
@@ -79,6 +78,7 @@ impl Contract {
             }
         };
 
+        // Time checks
         let current_time: u64 = env::block_timestamp();
 
         if start_time.is_some() {
@@ -91,6 +91,12 @@ impl Contract {
 
         if end_time.is_some() {
             assert!(end_time.unwrap().0 >= current_time);
+        }
+
+        // Making sure that start time and endtime is provided if its an auction
+        if is_auction{
+            assert!(start_time.is_some(), "Start time is not provided.");
+            assert!(end_time.is_some(), "End time is not provided.")
         }
 
         // Trying to put in the old price and old bids, if anyone tries to approve again.

@@ -26,10 +26,25 @@ impl Contract {
         assert_one_yocto();
         //get the sale object as the return value from removing the sale internally
         let sale = self.internal_remove_sale(nft_contract_id.into(), token_id);
-        //get the predecessor of the call and make sure they're the owner of the sale
-        let owner_id = env::predecessor_account_id();
+        //get the predecessor of the call and make sure they're either sale owner or smart contract owner
+        let caller_id = env::predecessor_account_id();
         //if this fails, the remove sale will revert
-        assert_eq!(owner_id, sale.owner_id, "Must be sale owner");
+        if caller_id!=sale.owner_id && caller_id!=self.owner_id{
+            env::panic_str("Must be either sale owner or owner of smart contract!");
+        }
+
+        let current_time: u64 = env::block_timestamp();
+
+        if sale.is_auction && sale.bids.is_some() {
+            let bids= sale.bids.unwrap();
+            if bids.len()>0{
+                let end_time=sale.end_time;
+                assert!(current_time < end_time.unwrap(), "Cannot remove auction now since the end_time has been crossed. Consider ending the auction instead.");
+                let current_bid = &bids[bids.len() - 1];
+                // refund
+                Promise::new(current_bid.bidder_id.clone()).transfer(current_bid.price.0);
+            }
+        } 
     }
 
     //updates the price for a sale on the market
@@ -49,6 +64,10 @@ impl Contract {
         
         //get the sale object from the unique sale ID. If there is no token, panic. 
         let mut sale = self.sales.get(&contract_and_token_id).expect("No sale");
+
+        if sale.is_auction{
+            env::panic_str("Sorry, cannot update an auction");
+        }
 
         //assert that the caller of the function is the sale owner
         assert_eq!(
@@ -77,12 +96,13 @@ impl Contract {
             let start_time=sale.start_time;
             let end_time=sale.end_time;
 
-            assert!( start_time < Some(current_time), "Cannot bid before auction starts");
-            assert!( Some(current_time) < end_time ,"Cannot bid since auction is over" );
+            assert!( start_time.unwrap() < current_time, "Cannot bid before auction starts");
+            assert!( current_time < end_time.unwrap() ,"Cannot bid since auction is over" );
         }
         else{
             env::panic_str("Sale should be an auction");
         }
+
         let bidder_id = env::predecessor_account_id();
         assert_ne!(sale.owner_id, bidder_id, "Cannot bid on your own sale.");
 
@@ -177,6 +197,8 @@ impl Contract {
         let buyer_id = env::predecessor_account_id();
         assert_ne!(sale.owner_id, buyer_id, "Cannot bid on your own sale.");
         
+        assert!(sale.is_auction==false, "Please use add_bid function to bid on this auction item!");
+
         let price = sale.price;
 
         //make sure the deposit is greater than the price
