@@ -53,7 +53,7 @@ impl Contract {
         //return the sale object
         sale
     }
-
+    
     pub(crate) fn internal_add_market_data(
         &mut self,
         owner_id: AccountId,

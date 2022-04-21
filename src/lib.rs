@@ -19,6 +19,7 @@ mod internal;
 mod nft_callbacks;
 mod sale;
 mod sale_views;
+mod contract_ids_for_account;
 
 //GAS constants to attach to calls
 const GAS_FOR_ROYALTIES: Gas = Gas(115_000_000_000_000);
@@ -76,10 +77,13 @@ pub struct Contract {
     pub by_owner_id: LookupMap<AccountId, UnorderedSet<ContractAndTokenId>>,
 
     //keep track of all the token IDs for sale for a given contract
-    pub by_nft_contract_id: LookupMap<AccountId, UnorderedSet<TokenId>>,
+    pub by_nft_contract_id: UnorderedMap<AccountId, UnorderedSet<TokenId>>, //IMP: Changed collection to Unordered map because I need the keys
 
     //keep track of the storage that accounts have payed
     pub storage_deposits: LookupMap<AccountId, Balance>,
+
+    //keep track of contracts that the account wants to see tokens of
+    pub contract_ids_by_account_id: LookupMap<AccountId, UnorderedSet<AccountId>>,
 }
 
 /// Helper structure to for keys of the persistent collections.
@@ -94,6 +98,8 @@ pub enum StorageKey {
     ByNFTTokenTypeInner { token_type_hash: CryptoHash },
     FTTokenIds,
     StorageDeposits,
+    AccountContractIds,
+    ContractIdsInner { account_id_hash: CryptoHash},
 }
 
 #[near_bindgen]
@@ -112,8 +118,9 @@ impl Contract {
             //Storage keys are simply the prefixes used for the collections. This helps avoid data collision
             sales: UnorderedMap::new(StorageKey::Sales),
             by_owner_id: LookupMap::new(StorageKey::ByOwnerId),
-            by_nft_contract_id: LookupMap::new(StorageKey::ByNFTContractId),
+            by_nft_contract_id: UnorderedMap::new(StorageKey::ByNFTContractId),
             storage_deposits: LookupMap::new(StorageKey::StorageDeposits),
+            contract_ids_by_account_id: LookupMap::new(StorageKey::AccountContractIds),
         };
 
         //return the Contract object

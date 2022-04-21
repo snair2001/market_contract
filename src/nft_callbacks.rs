@@ -74,7 +74,6 @@ impl NonFungibleTokenApprovalsReceiver for Contract {
             owner_paid_storage, signer_storage_required / STORAGE_PER_SALE, STORAGE_PER_SALE
         );
 
-
         let SaleArgs {
             price,
             is_auction,

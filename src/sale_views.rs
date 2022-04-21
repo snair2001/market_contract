@@ -78,6 +78,10 @@ impl Contract {
         }
     }
 
+    pub fn get_contract_ids(&self) -> Vec<AccountId>{
+        self.by_nft_contract_id.keys_as_vector().iter().collect()
+    }
+
     //returns paginated sale objects associated with a given nft contract. (result is a vector of sales)
     pub fn get_sales_by_nft_contract_id(
         &self,
