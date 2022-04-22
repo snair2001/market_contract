@@ -1,12 +1,16 @@
 use crate::*;
 use crate::internal::hash_account_id;
 
+const STORAGE_PRICE_CONTRACT_ID:u128 = 10 * STORAGE_PRICE_PER_BYTE;
+
 #[near_bindgen]
 impl Contract{
 
 	#[payable]
 	pub fn add_contract_for_account(&mut self, nft_contract_id: AccountId){
-		assert_one_yocto();
+        // Need to deposit 0.001 N for storing these values 
+        assert!(env::attached_deposit() > STORAGE_PRICE_CONTRACT_ID, "Requires minimum deposit of {}", STORAGE_PRICE_CONTRACT_ID );
+
 		let account_id = env::predecessor_account_id();
 
 		let mut contract_ids = self.contract_ids_by_account_id.get(&account_id).unwrap_or_else(|| {
@@ -31,7 +35,10 @@ impl Contract{
 
 		let account_id = env::predecessor_account_id();
 
-		let mut contract_ids = self.contract_ids_by_account_id.get(&account_id).expect("Not found contract id by account");
+		let mut contract_ids = self.contract_ids_by_account_id.get(&account_id).expect("Couldn't find account");
+
+        assert_eq!(contract_ids.contains(&nft_contract_id), true, "Couldn't find the contract being removed");
+        
         contract_ids.remove(&nft_contract_id);
         
         if contract_ids.is_empty() {
