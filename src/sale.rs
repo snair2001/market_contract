@@ -1,5 +1,6 @@
 use crate::*;
 use near_sdk::promise_result_as_success;
+use near_sdk::log;
 
 //struct that holds important information about each sale on the market
 #[derive(BorshDeserialize, BorshSerialize, Serialize, Deserialize)]
@@ -248,6 +249,7 @@ impl Contract {
         .then(ext_self::resolve_purchase(
             buyer_id, //the buyer and price are passed in incase something goes wrong and we need to refund the buyer
             price,
+            sale,
             env::current_account_id(), //we are invoking this function on the current contract
             NO_DEPOSIT, //don't attach any deposit
             GAS_FOR_ROYALTIES, //GAS attached to the call to payout royalties
@@ -264,6 +266,7 @@ impl Contract {
         &mut self,
         buyer_id: AccountId,
         price: U128,
+        sale: Sale,
     ) -> U128 {
         // checking for payout information returned from the nft_transfer_payout method
         let payout_option = promise_result_as_success().and_then(|value| {
@@ -312,9 +315,21 @@ impl Contract {
             return price;
         };
 
+        let fee_percentage = 500u128;
+        let fee = price.0 * fee_percentage / 10_000u128;
+
+        log!("Fees that should be going is: {}", fee);
         // NEAR payouts
         for (receiver_id, amount) in payout {
-            Promise::new(receiver_id).transfer(amount.0);
+            if receiver_id == sale.owner_id {
+                Promise::new(receiver_id).transfer(amount.0 - fee);
+                if fee != 0 {
+                    Promise::new(self.treasury_id.clone()).transfer(fee);
+                }
+            } 
+            else {
+                Promise::new(receiver_id).transfer(amount.0);
+            }
         }
 
         //return the price payout out
@@ -334,5 +349,6 @@ trait ExtSelf {
         &mut self,
         buyer_id: AccountId,
         price: U128,
+        sale : Sale,
     ) -> Promise;
 }

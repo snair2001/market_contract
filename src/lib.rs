@@ -65,6 +65,8 @@ pub struct Payout {
 pub struct Contract {
     //keep track of the owner of the contract
     pub owner_id: AccountId,
+
+    pub treasury_id: AccountId,
     
     /*
         to keep track of the sales, we map the ContractAndTokenId to a Sale. 
@@ -110,11 +112,11 @@ impl Contract {
         that's passed in
     */
     #[init]
-    pub fn new(owner_id: AccountId) -> Self {
+    pub fn new(owner_id: AccountId, treasury_id: AccountId) -> Self {
         let this = Self {
             //set the owner_id field equal to the passed in owner_id. 
             owner_id,
-
+            treasury_id,
             //Storage keys are simply the prefixes used for the collections. This helps avoid data collision
             sales: UnorderedMap::new(StorageKey::Sales),
             by_owner_id: LookupMap::new(StorageKey::ByOwnerId),
