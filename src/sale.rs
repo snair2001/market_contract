@@ -2,6 +2,8 @@ use crate::*;
 use near_sdk::promise_result_as_success;
 use near_sdk::log;
 
+const MIN_BID_INCREMENT : u128 = 10_000_000_000_000_000_000_000; // 0.01 N
+
 //struct that holds important information about each sale on the market
 #[derive(BorshDeserialize, BorshSerialize, Serialize, Deserialize)]
 #[serde(crate = "near_sdk::serde")]
@@ -36,11 +38,21 @@ impl Contract {
 
         let current_time: u64 = env::block_timestamp();
 
-        if sale.is_auction && sale.bids.is_some() {
+        /* For auction removal: 
+          1.smart contract owner can remove the auction any time, no constraints. (will only be exercised in case of tokens where marketplace is not approved anymore)
+          2.token owner can remove it any time if it has no bids else no removal allowed after end_time if there are bids.
+        */
+        if sale.is_auction && sale.bids.is_some(){
+            
             let bids= sale.bids.unwrap();
+            
             if bids.len()>0{
                 let end_time=sale.end_time;
-                assert!(current_time < end_time.unwrap(), "Cannot remove auction now since the end_time has been crossed. Consider ending the auction instead.");
+                
+                if  caller_id==sale.owner_id {
+                    assert!(current_time < end_time.unwrap(), "Cannot remove auction now since the end_time has been crossed. Consider ending the auction instead.");
+                }
+
                 let current_bid = &bids[bids.len() - 1];
                 // refund
                 Promise::new(current_bid.bidder_id.clone()).transfer(current_bid.price.0);
@@ -118,8 +130,8 @@ impl Contract {
             let current_bid = &bids[bids.len() - 1];
 
             assert!(
-                deposit > current_bid.price.0,
-                "Can't pay less than or equal to current bid price: {:?}",
+                deposit > (current_bid.price.0 + MIN_BID_INCREMENT),
+                "Can't pay less than or equal to current bid price + increment (0.01 N) : {:?}",
                 current_bid.price
             );
 
