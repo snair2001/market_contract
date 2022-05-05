@@ -9,7 +9,7 @@ impl Contract{
 	#[payable]
 	pub fn add_contract_for_account(&mut self, nft_contract_id: AccountId){
         // Need to deposit 0.001 N for storing these values 
-        assert!(env::attached_deposit() > STORAGE_PRICE_CONTRACT_ID, "Requires minimum deposit of {}", STORAGE_PRICE_CONTRACT_ID );
+        assert!(env::attached_deposit() >= STORAGE_PRICE_CONTRACT_ID, "Requires minimum deposit of {}", STORAGE_PRICE_CONTRACT_ID );
 
 		let account_id = env::predecessor_account_id();
 

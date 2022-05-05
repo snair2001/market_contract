@@ -123,4 +123,8 @@ impl Contract {
         //we're not guaranteed that the unique sale ID passed in will be valid.
         self.sales.get(&nft_contract_token)
     }
+
+    pub fn get_treasury_id(&self) -> AccountId {
+        self.treasury_id.clone()
+    }
 }

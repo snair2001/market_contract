@@ -204,4 +204,14 @@ impl Contract {
     pub fn storage_balance_of(&self, account_id: AccountId) -> U128 {
         U128(self.storage_deposits.get(&account_id).unwrap_or(0))
     }
+
+    // if the owner ever wants to move their treasury
+    pub fn change_treasury_id(&mut self, treasury_id: AccountId) {
+        assert_eq!(
+            env::predecessor_account_id(),
+            self.owner_id,
+            "only owner"
+        );
+        self.treasury_id = treasury_id;
+    }
 }
