@@ -130,7 +130,7 @@ impl Contract {
             let current_bid = &bids[bids.len() - 1];
 
             assert!(
-                deposit > (current_bid.price.0 + MIN_BID_INCREMENT),
+                deposit >= (current_bid.price.0 + MIN_BID_INCREMENT),
                 "Can't pay less than or equal to current bid price + increment (0.01 N) : {:?}",
                 current_bid.price
             );

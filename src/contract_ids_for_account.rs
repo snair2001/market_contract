@@ -35,8 +35,10 @@ impl Contract{
 
 		let account_id = env::predecessor_account_id();
 
+        // Finding the collection of contract ids for the account
 		let mut contract_ids = self.contract_ids_by_account_id.get(&account_id).expect("Couldn't find account");
 
+        // Finding the contract id
         assert_eq!(contract_ids.contains(&nft_contract_id), true, "Couldn't find the contract being removed");
         
         contract_ids.remove(&nft_contract_id);
