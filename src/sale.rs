@@ -148,8 +148,8 @@ impl Contract {
             bids.remove(bids.len() - 1);
         } else {
             assert!(
-                deposit > sale.price,
-                "Can't pay less than or equal to starting price: {}",
+                deposit >= (sale.price + MIN_BID_INCREMENT),
+                "Can't pay less than or equal to starting price + increment (0.01 N): {}",
                 sale.price
             );
         }
