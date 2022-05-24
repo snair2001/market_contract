@@ -167,7 +167,11 @@ impl Contract {
         self.sales.get(&nft_contract_token)
     }
 
-    pub fn get_treasury_id(&self) -> AccountId {
-        self.treasury_id.clone()
+    pub fn get_charges_info(&self) -> (AccountId, u128) {
+        (self.charges_id.clone(), self.charges)
+    }
+
+    pub fn get_commissions_info(&self) -> (AccountId, u128) {
+        (self.commissions_id.clone(), self.commissions)
     }
 }

@@ -66,7 +66,11 @@ pub struct Contract {
     //keep track of the owner of the contract
     pub owner_id: AccountId,
 
-    pub treasury_id: AccountId,
+    pub charges_id: AccountId,
+    pub commissions_id: AccountId,
+
+    pub charges: u128,
+    pub commissions: u128,
     
     /*
         to keep track of the sales, we map the ContractAndTokenId to a Sale. 
@@ -112,11 +116,21 @@ impl Contract {
         that's passed in
     */
     #[init]
-    pub fn new(owner_id: AccountId, treasury_id: AccountId) -> Self {
+    pub fn new(owner_id: AccountId, charges_id: AccountId, charges: u128, commissions_id: AccountId, commissions: u128) -> Self {
+
+        assert!(
+            charges + commissions <= 6000,
+            "Cannot have the sum of charges and commissions to be greater than 60%"
+        );
+
         let this = Self {
             //set the owner_id field equal to the passed in owner_id. 
             owner_id,
-            treasury_id,
+            charges_id,
+            commissions_id,
+
+            charges,
+            commissions,
             //Storage keys are simply the prefixes used for the collections. This helps avoid data collision
             sales: UnorderedMap::new(StorageKey::Sales),
             by_owner_id: LookupMap::new(StorageKey::ByOwnerId),
@@ -205,13 +219,63 @@ impl Contract {
         U128(self.storage_deposits.get(&account_id).unwrap_or(0))
     }
 
-    // if the owner ever wants to move their treasury
-    pub fn change_treasury_id(&mut self, treasury_id: AccountId) {
+    // if the owner ever wants to move their charges somewhere
+    pub fn change_charges_id(&mut self, charges_id: AccountId) {
         assert_eq!(
             env::predecessor_account_id(),
             self.owner_id,
             "only owner"
         );
-        self.treasury_id = treasury_id;
+        self.charges_id = charges_id;
+    }
+
+    // if the owner wants to move their commissions
+    pub fn change_commissions_id(&mut self, commissions_id: AccountId) {
+        assert_eq!(
+            env::predecessor_account_id(),
+            self.owner_id,
+            "only owner"
+        );
+        self.commissions_id = commissions_id;
+    }
+
+    pub fn change_charges(&mut self, charges: u128) {
+        assert_eq!(
+            env::predecessor_account_id(),
+            self.owner_id,
+            "only owner"
+        );
+
+        assert!(
+            charges <= 10_000,
+            "Cannot increase charges more than 10,000 (100%)"
+        );
+
+        assert!(
+            charges + self.commissions <= 6000,
+            "Cannot have the sum of charges and commissions to be greater than 60%"
+        );
+
+        self.charges = charges;
+    }
+
+    pub fn change_commissions(&mut self, commissions: u128) {
+        assert_eq!(
+            env::predecessor_account_id(),
+            self.owner_id,
+            "only owner"
+        );
+
+        assert!(
+            commissions <= 10_000,
+            "Cannot increase commissions more than 10,000 (100%)"
+        );
+        
+        assert!(
+            self.charges + commissions <= 6000,
+            "Cannot have the sum of charges and commissions to be greater than 60%"
+        );
+
+        self.commissions = commissions;
     }
 }
