@@ -82,6 +82,44 @@ impl Contract {
         self.by_nft_contract_id.keys_as_vector().iter().collect()
     }
 
+    pub fn get_sales(
+        &self,
+        from_index: Option<U128>,
+        limit: Option<u64>,
+    ) -> Vec<Sale> {
+        let keys = self.sales.keys_as_vector();
+        let start = u128::from(from_index.unwrap_or(U128(0)));
+
+        keys.iter()
+            .skip(start as usize) 
+            //take the first "limit" elements in the vector. If we didn't specify a limit, use 0
+            .take(limit.unwrap_or(0) as usize) 
+            //we'll map the token IDs which are strings into Sale objects by passing in the unique sale ID (contract + DELIMITER + token ID)
+            .map(|indexer| self.sales.get(&indexer).unwrap())
+            .filter(|x| !x.is_auction)
+            //since we turned the keys into an iterator, we need to turn it back into a vector to return
+            .collect()
+    }
+
+    pub fn get_auctions(
+        &self,
+        from_index: Option<U128>,
+        limit: Option<u64>,
+    ) -> Vec<Sale> {
+        let keys = self.sales.keys_as_vector();
+        let start = u128::from(from_index.unwrap_or(U128(0)));
+
+        keys.iter()
+            .skip(start as usize) 
+            //take the first "limit" elements in the vector. If we didn't specify a limit, use 0
+            .take(limit.unwrap_or(0) as usize) 
+            //we'll map the token IDs which are strings into Sale objects by passing in the unique sale ID (contract + DELIMITER + token ID)
+            .map(|indexer| self.sales.get(&indexer).unwrap())
+            .filter(|x| x.is_auction)
+            //since we turned the keys into an iterator, we need to turn it back into a vector to return
+            .collect()
+    }
+
     //returns paginated sale objects associated with a given nft contract. (result is a vector of sales)
     pub fn get_sales_by_nft_contract_id(
         &self,
@@ -117,49 +155,6 @@ impl Contract {
             .collect()
     }
 
-    pub fn get_number_of_offers(
-        &self,
-        nft_contract_id: AccountId,
-    ) -> U64 {
-        //get the set of tokens for associated with the given nft contract
-        let by_nft_contract_id = self.by_nft_contract_id.get(&nft_contract_id);
-        
-        //if there was some set, return it's length. Otherwise return 0
-        if let Some(by_nft_contract_id) = by_nft_contract_id {
-            let offers : Vec<Sale> = by_nft_contract_id
-                .as_vector()
-                .iter()
-                .map(|token_id| self.sales.get(&format!("{}{}{}", nft_contract_id, DELIMETER, token_id)).unwrap())
-                .filter(|x| !x.is_auction)
-                .collect();
-
-            U64(offers.len().try_into().unwrap())
-        } else {
-            U64(0)
-        }
-    }
-
-    pub fn get_number_of_auctions(
-        &self,
-        nft_contract_id: AccountId,
-    ) -> U64 {
-        //get the set of tokens for associated with the given nft contract
-        let by_nft_contract_id = self.by_nft_contract_id.get(&nft_contract_id);
-        
-        //if there was some set, return it's length. Otherwise return 0
-        if let Some(by_nft_contract_id) = by_nft_contract_id {
-            let offers : Vec<Sale> = by_nft_contract_id
-                .as_vector()
-                .iter()
-                .map(|token_id| self.sales.get(&format!("{}{}{}", nft_contract_id, DELIMETER, token_id)).unwrap())
-                .filter(|x| x.is_auction)
-                .collect();
-
-            U64(offers.len().try_into().unwrap())
-        } else {
-            U64(0)
-        }
-    }
     //get a sale information for a given unique sale ID (contract + DELIMITER + token ID)
     pub fn get_sale(&self, nft_contract_token: ContractAndTokenId) -> Option<Sale> {
         //try and get the sale object for the given unique sale ID. Will return an option since
